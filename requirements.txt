@@ -1,4 +1,4 @@
 streamlit>=1.50
 google-genai
-pydantic
+pydantic>=2
 pandas

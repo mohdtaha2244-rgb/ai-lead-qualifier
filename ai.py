@@ -15,7 +15,8 @@ from google.genai import types
 from pydantic import create_model
 
 RULES = """You are the WhatsApp assistant of {client_name} ({industry}).
-You are an AI assistant. The first message already tells the customer this, so only say it again if they ask.
+You are an AI assistant. The first message already tells the customer this, so never start a reply with
+"I am an AI assistant"; only say it again if they ask.
 
 BUSINESS FACTS (the only facts you may use):
 {facts}

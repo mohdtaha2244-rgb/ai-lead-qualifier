@@ -64,11 +64,11 @@
     },
     "HOT": {
       "en": "Great news: {agent} can have the car ready. Pick a {booking_word} time by replying 1, 2 or 3:\n{slots}",
-      "ar": "خبر رائع: يمكن لـ {agent} تجهيز السيارة. اختر موعد تجربة القيادة بالرد بـ 1 أو 2 أو 3:\n{slots}"
+      "ar": "خبر رائع: السيارة ستكون جاهزة مع {agent}. اختر موعد تجربة القيادة بالرد بـ 1 أو 2 أو 3:\n{slots}"
     },
     "WARM": {
       "en": "Thank you! {agent} will call you within one working day with cars that match.",
-      "ar": "شكراً لك! سيتصل بك {agent} خلال يوم عمل واحد بسيارات مناسبة."
+      "ar": "شكراً لك! ستصلك مكالمة من {agent} خلال يوم عمل واحد بسيارات مناسبة."
     },
     "COLD": {
       "en": "Thank you! I'll send you new cars that match. Message me anytime when you're ready.",
@@ -84,7 +84,7 @@
     },
     "handover": {
       "en": "Of course. I've passed your details to {agent}, who will reply to you here shortly.",
-      "ar": "بالتأكيد. لقد أرسلت بياناتك إلى {agent} وسيرد عليك هنا قريباً."
+      "ar": "بالتأكيد. لقد أرسلت بياناتك إلى {agent}، وستصلك الإجابة هنا قريباً."
     },
     "opted_out": {
       "en": "Done. You won't get any more messages from us. Thank you!",
