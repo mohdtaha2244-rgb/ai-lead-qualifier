@@ -93,7 +93,7 @@ def alert_agent(db, config, lead, now, agent, tier, details, score):
     db.log(lead["id"], now, "agent_alert", "WhatsApp to %s: %s" % (agent, text))
 
 
-def hand_over(db, config, lead, now, lang, started, reason, reply=None):
+def hand_over(db, config, lead, now, lang, started, reason, reply=None, first=False):
     """A person takes over: the agent gets the full details, the AI stops replying in this chat."""
     details = lead["fields"]
     agent = lead["agent"] or pick_agent(details, config, db.open_leads_by_agent(config["client_name"]))
@@ -101,6 +101,8 @@ def hand_over(db, config, lead, now, lang, started, reason, reply=None):
     db.log(lead["id"], now, "handover", "%s. Chat passed to %s." % (reason, agent))
     alert_agent(db, config, lead, now, agent, "Handover", details, lead["score"])
     text = reply or config["messages"]["handover"][lang].format(agent=agent)
+    if first:
+        text = config["messages"]["welcome"][lang] + "\n\n" + text      # first message always says it is an AI
     return send(db, lead, now, text, started)
 
 
@@ -172,16 +174,16 @@ def handle_message(db, config, lead_id, text, ai, now=None):
 
     # 5. asked for a person
     if wants_human(text, config):
-        return hand_over(db, config, lead, now, lang, started, "Lead asked for a person")
+        return hand_over(db, config, lead, now, lang, started, "Lead asked for a person", first=first_contact)
 
     # 6. the AI reads the message and writes the reply
     details = dict(lead["fields"])
     try:
         answer, model = ai(config, db.messages(lead_id), details, missing_fields(config, details))
     except Exception as error:
-        db.log(lead_id, now, "ai_error", str(error)[:300])
+        db.log(lead_id, now, "ai_error", str(error)[:600])
         return hand_over(db, config, lead, now, lang, started, "The AI could not answer, so a person takes over",
-                         reply=msgs["ai_down"][lang])
+                         reply=msgs["ai_down"][lang], first=first_contact)
     found = clean_details(config, answer.get("details", {}))
     changed = {k: v for k, v in found.items() if details.get(k) != v}
     if changed:
@@ -197,7 +199,7 @@ def handle_message(db, config, lead_id, text, ai, now=None):
 
     reply = (answer.get("reply") or "").strip()
     if answer.get("wants_human"):
-        return hand_over(db, config, lead, now, lang, started, "The AI saw this needs a person")
+        return hand_over(db, config, lead, now, lang, started, "The AI saw this needs a person", first=first_contact)
 
     # 8. act on the tier (only when it changes, so the lead never gets the same offer twice)
     if lead["stage"] != "Viewing booked" and tier != lead["tier"]:

@@ -84,7 +84,8 @@ def test_asking_for_a_person_hands_over_and_the_ai_goes_quiet(db):
 def test_when_the_ai_fails_a_person_takes_over(db):
     lead_id = new_lead(db)
     reply = handle_message(db, CONFIG, lead_id, "Hi", FakeAI(RuntimeError("503 UNAVAILABLE")))
-    assert reply == CONFIG["messages"]["ai_down"]["en"]
+    assert reply.endswith(CONFIG["messages"]["ai_down"]["en"])
+    assert reply.startswith("Hi! I'm the AI assistant")             # first message always says it is an AI
     assert db.get_lead(lead_id)["stage"] == "Handover"
     assert "ai_error" in events(db, lead_id)
 
@@ -106,7 +107,8 @@ def test_same_phone_twice_is_one_lead(db):
 def test_arabic_message_gets_arabic_system_messages(db):
     lead_id = new_lead(db)
     reply = handle_message(db, CONFIG, lead_id, "أريد التحدث مع موظف", FakeAI())
-    assert reply == CONFIG["messages"]["handover"]["ar"].format(agent="Daniel")
+    assert reply.endswith(CONFIG["messages"]["handover"]["ar"].format(agent="Daniel"))
+    assert reply.startswith(CONFIG["messages"]["welcome"]["ar"])
 
 
 def test_six_follow_ups_then_stop_and_reopen_when_they_reply(db):
@@ -132,3 +134,10 @@ def test_two_leads_never_get_the_same_viewing_time(db):
     assert "1)" in reply and db.get_lead(b)["stage"] != "Viewing booked"
     handle_message(db, CONFIG, b, "1", FakeAI())
     assert db.get_lead(a)["viewing_at"] != db.get_lead(b)["viewing_at"]
+
+
+def test_ai_errors_are_explained_in_the_audit_log(db):
+    lead_id = new_lead(db)
+    handle_message(db, CONFIG, lead_id, "Hi", FakeAI(RuntimeError("no AI model answered. Tried: model-x: 404 NOT_FOUND")))
+    errors = [e["detail"] for e in db.events(CONFIG["client_name"], lead_id) if e["kind"] == "ai_error"]
+    assert "404" in errors[0]

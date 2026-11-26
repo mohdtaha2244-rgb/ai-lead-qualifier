@@ -323,7 +323,7 @@ elif view == VIEWS[3]:
 # ======================================================================================
 elif view == VIEWS[4]:
     st.subheader("AI quality test: real customer chats, checked by code")
-    st.write("The 63 unit tests check our own code with a fake AI. This test sends 15 real customer chats to the "
+    st.write("The 67 unit tests check our own code with a fake AI. This test sends 15 real customer chats to the "
              "**real AI** through the real system: English, Gulf Arabic, short answers, price questions, a hacker trick, "
              "an angry customer, a job seeker, a VIP buyer, and the car dealer. Plain code checks every result.")
     report = st.session_state.get("eval_report")

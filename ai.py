@@ -15,7 +15,7 @@ from google.genai import types
 from pydantic import create_model
 
 RULES = """You are the WhatsApp assistant of {client_name} ({industry}).
-You are an AI assistant, and you say so if asked.
+You are an AI assistant. The first message already tells the customer this, so only say it again if they ask.
 
 BUSINESS FACTS (the only facts you may use):
 {facts}
@@ -84,7 +84,9 @@ def pick_models(key):
     return [n for v, n in sorted(flash, reverse=True)] + [n for v, n in sorted(lite, reverse=True)]
 
 
-RESTING = {}      # model -> time it can be used again (its free quota ran out)
+RESTING = {}          # model -> time it can be used again (its free quota ran out)
+SWITCHED_OFF = set()  # models Google no longer offers to this key (404): skipped forever
+DEADLINE_SECONDS = 25 # no answer by then -> a person takes over (a customer should never wait longer)
 
 
 def build_contents(history, details, missing, labels):
@@ -105,7 +107,7 @@ def build_contents(history, details, missing, labels):
 def make_ai(key, model=None):
     """Returns a function the engine can call. Keeping the AI behind one function means
     the tests can use a fake AI, and we could switch to another AI provider by changing only this file."""
-    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=30000))
+    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=15000))
 
     def ask(config, history, details, missing):
         shape = answer_model(config)
@@ -115,20 +117,28 @@ def make_ai(key, model=None):
         plain = types.GenerateContentConfig(**base)
         labels = {f["key"]: f["label"] for f in config["fields"]}
         contents = build_contents(history, details, missing, labels)
-        models = [model] if model else [m for m in pick_models(key) if RESTING.get(m, 0) < time.time()][:5]
+        models = [model] if model else [m for m in pick_models(key)
+                                         if m not in SWITCHED_OFF and RESTING.get(m, 0) < time.time()][:5]
         if not models:
             raise RuntimeError("quota: the free AI quota is used up for now")
-        last_error = None
+        deadline = time.time() + DEADLINE_SECONDS
+        errors = []
         for name in models:
             for attempt in range(2):
+                if time.time() > deadline:
+                    raise RuntimeError("no answer within %d s, so a person takes over. Tried: %s"
+                                       % (DEADLINE_SECONDS, " | ".join(errors)))
                 try:
                     response = client.models.generate_content(model=name, contents=contents,
                                                               config=fast if attempt == 0 else plain)
                     answer = response.parsed if isinstance(response.parsed, shape) else shape.model_validate_json(response.text)
                     return answer.model_dump(), name
                 except Exception as error:
-                    last_error = error
                     text = str(error)
+                    errors.append("%s: %s" % (name, text[:100]))
+                    if "404" in text or "NOT_FOUND" in text or "no longer available" in text:
+                        SWITCHED_OFF.add(name)
+                        break                   # Google switched this model off: never try it again
                     if "429" in text or "RESOURCE_EXHAUSTED" in text:
                         wait = re.findall(r"retryDelay'?:\s*'?(\d+)", text)
                         RESTING[name] = time.time() + (int(wait[0]) if wait else 60)
@@ -139,6 +149,6 @@ def make_ai(key, model=None):
                         time.sleep(1)
                         continue                # busy: one quick retry
                     break
-        raise last_error
+        raise RuntimeError("no AI model answered. Tried: " + " | ".join(errors))
 
     return ask
