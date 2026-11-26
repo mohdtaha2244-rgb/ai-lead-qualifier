@@ -56,3 +56,11 @@ def test_when_every_model_fails_the_error_says_why(monkeypatch):
         assert False, "should have failed"
     except RuntimeError as error:
         assert "a: 404" in str(error) and "b: 500" in str(error)
+
+
+def test_backup_lite_model_is_always_tried(monkeypatch):
+    busy = RuntimeError("429 RESOURCE_EXHAUSTED")
+    outcomes = {"f1": busy, "f2": busy, "f3": busy, "f4": busy, "f5": busy, "f6-lite": GOOD}
+    ask, fake = make(monkeypatch, outcomes, ["f1", "f2", "f3", "f4", "f5", "f6-lite"])
+    assert ask(CONFIG, HISTORY, {}, [])[1] == "f6-lite"
+    assert fake.tried == ["f1", "f2", "f6-lite"]

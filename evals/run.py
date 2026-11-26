@@ -87,7 +87,7 @@ def run_case(case, config, ai):
     errors = [e["detail"] for e in db.events(config["client_name"], lead_id) if e["kind"] == "ai_error"]
     results = check(case, config, lead, replies, " ".join(case["messages"]))
     if errors:
-        results.append(("AI answered without errors", False, errors[0][:150]))
+        results.append(("AI answered without errors", False, errors[0][:900]))
     return {"id": case["id"], "title": case["title"], "client": case["client"], "passed": all(r[1] for r in results),
             "checks": [{"check": c, "passed": ok, "saw": str(saw)} for c, ok, saw in results],
             "chat": [{"customer": t, "reply": r} for t, r in zip(case["messages"], replies)],

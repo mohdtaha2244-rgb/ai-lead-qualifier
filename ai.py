@@ -118,8 +118,11 @@ def make_ai(key, model=None):
         plain = types.GenerateContentConfig(**base)
         labels = {f["key"]: f["label"] for f in config["fields"]}
         contents = build_contents(history, details, missing, labels)
-        models = [model] if model else [m for m in pick_models(key)
-                                         if m not in SWITCHED_OFF and RESTING.get(m, 0) < time.time()][:5]
+        if model:
+            models = [model]
+        else:                                    # best 2 main models, then 3 'lite' backups: a backup is always tried
+            ready = [m for m in pick_models(key) if m not in SWITCHED_OFF and RESTING.get(m, 0) < time.time()]
+            models = [m for m in ready if "lite" not in m][:2] + [m for m in ready if "lite" in m][:3]
         if not models:
             raise RuntimeError("quota: the free AI quota is used up for now")
         deadline = time.time() + DEADLINE_SECONDS
@@ -136,7 +139,7 @@ def make_ai(key, model=None):
                     return answer.model_dump(), name
                 except Exception as error:
                     text = str(error)
-                    errors.append("%s: %s" % (name, text[:100]))
+                    errors.append("%s: %s" % (name, text[:160]))
                     if "404" in text or "NOT_FOUND" in text or "no longer available" in text:
                         SWITCHED_OFF.add(name)
                         break                   # Google switched this model off: never try it again
