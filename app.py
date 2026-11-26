@@ -329,7 +329,9 @@ elif view == VIEWS[4]:
     if report is None and os.path.exists("evals/report.json"):
         report = json.load(open("evals/report.json", encoding="utf-8"))
     if key and st.button("▶ Run the 15 tests now on the live AI (about 2 minutes)"):
-        from evals.run import run_all
+        import importlib
+        import evals.run
+        run_all = importlib.reload(evals.run).run_all      # always test the newest engine code
         bar = st.progress(0.0)
         configs = {"real_estate": load_config(CLIENTS["Demo Realty Dubai (property)"]),
                    "car_dealer": load_config(CLIENTS["Demo Motors Dubai (cars)"])}
