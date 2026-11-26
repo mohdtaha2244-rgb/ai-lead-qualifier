@@ -23,7 +23,8 @@ CLIENTS = {"Demo Realty Dubai (property)": "clients/real_estate.json",
            "Demo Motors Dubai (cars)": "clients/car_dealer.json"}
 BADGE = {"HOT": "🔥 HOT", "WARM": "🌤️ WARM", "COLD": "❄️ COLD", "QUALIFYING": "⏳ QUALIFYING",
          "NOT A LEAD": "🚫 NOT A LEAD", "NEW": "🆕 NEW"}
-VIEWS = ["💬 Lead chat", "📋 Sales pipeline", "📊 Manager report", "⚙️ Client rules"]
+VIEWS = ["💬 Lead chat", "📋 Sales pipeline", "📊 Manager report", "💰 ROI calculator", "🧪 AI quality test",
+         "⚙️ Client rules"]
 
 
 @st.cache_resource
@@ -283,6 +284,79 @@ elif view == VIEWS[2]:
             st.write("🔥 %s (%s): hot, has not picked a time · agent %s" % (name_of(lead), lead["phone"], lead["agent"]))
         if not handover and not waiting:
             st.write("Nothing. All caught up ✅")
+
+# ======================================================================================
+elif view == VIEWS[3]:
+    st.subheader("What the system is worth to the client")
+    st.write("Careful starting numbers; change them to match the client. Every result shows its formula, so the client can check it.")
+    a, b = st.columns(2, gap="large")
+    leads_month = a.number_input("Leads per month", 10, 20000, 200, 10)
+    lost = a.slider("Leads lost today to slow or no reply (%)", 0, 60, 10)
+    win = a.slider("Leads that become a deal (%)", 0.5, 10.0, 1.5, 0.5)
+    deal = a.number_input("Earning per deal (AED)", 1000, 2_000_000, 30000, 1000,
+                          help="For a brokerage: the commission. Example: 2% of a 1.5M sale = AED 30,000")
+    agents = b.number_input("Sales agents", 1, 500, 10)
+    admin = b.slider("Hours per agent per day on WhatsApp admin today", 0.0, 6.0, 1.5, 0.5)
+    share = b.slider("Share of that admin the system takes over (%)", 0, 100, 50)
+    hour_cost = b.number_input("Cost of one agent hour (AED)", 10, 2000, 50)
+    price = b.number_input("System price per month (AED)", 500, 100000, 3500, 500)
+    saved_leads = leads_month * lost / 100
+    extra_deals = saved_leads * win / 100
+    extra_money = extra_deals * deal
+    hours = agents * admin * share / 100 * 22
+    time_money = hours * hour_cost
+    total = extra_money + time_money
+    k = st.columns(4)
+    k[0].metric("Extra deals a month", "%.1f" % extra_deals)
+    k[1].metric("Extra value a month", "AED {:,.0f}".format(total))
+    k[2].metric("Return for every AED 1", "AED %.1f" % (total / price))
+    k[3].metric("Pays for itself in", "%d days" % max(1, round(price / (total / 30))) if total else "never")
+    st.dataframe(pd.DataFrame([
+        {"Result": "Leads saved a month", "Formula": "%d leads x %d%% lost" % (leads_month, lost), "Value": "%.0f" % saved_leads},
+        {"Result": "Extra deals a month", "Formula": "%.0f saved leads x %.1f%% become deals" % (saved_leads, win), "Value": "%.1f" % extra_deals},
+        {"Result": "Extra earnings a month", "Formula": "%.1f deals x AED {:,}".format(deal) % extra_deals, "Value": "AED {:,.0f}".format(extra_money)},
+        {"Result": "Agent hours saved a month", "Formula": "%d agents x %.1f h x %d%% x 22 working days" % (agents, admin, share), "Value": "%.0f h" % hours},
+        {"Result": "Value of hours saved", "Formula": "%.0f h x AED %d" % (hours, hour_cost), "Value": "AED {:,.0f}".format(time_money)},
+    ]), hide_index=True, width="stretch")
+    st.caption("An estimate from the numbers above, not a promise. After launch, the pipeline and report show the real results.")
+
+# ======================================================================================
+elif view == VIEWS[4]:
+    st.subheader("AI quality test: real customer chats, checked by code")
+    st.write("The 63 unit tests check our own code with a fake AI. This test sends 15 real customer chats to the "
+             "**real AI** through the real system: English, Gulf Arabic, short answers, price questions, a hacker trick, "
+             "an angry customer, a job seeker, a VIP buyer, and the car dealer. Plain code checks every result.")
+    report = st.session_state.get("eval_report")
+    if report is None and os.path.exists("evals/report.json"):
+        report = json.load(open("evals/report.json", encoding="utf-8"))
+    if key and st.button("▶ Run the 15 tests now on the live AI (about 2 minutes)"):
+        from evals.run import run_all
+        bar = st.progress(0.0)
+        configs = {"real_estate": load_config(CLIENTS["Demo Realty Dubai (property)"]),
+                   "car_dealer": load_config(CLIENTS["Demo Motors Dubai (cars)"])}
+        report = run_all(configs, ai, progress=lambda n, total, title: bar.progress(n / total, text="Test %d of %d: %s" % (n + 1, total, title)))
+        bar.empty()
+        st.session_state.eval_report = report
+        with open("evals/report.json", "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=1)
+    if report:
+        models = sorted({c["model"] for c in report["cases"] if c["model"]})
+        st.metric("Passed", "%d / %d" % (report["passed"], report["total"]))
+        st.caption("Run on %s · AI model: %s" % (report["run_at"], ", ".join(models) or "?"))
+        st.dataframe(pd.DataFrame([{"#": c["id"], "Test": c["title"], "Result": "✅ pass" if c["passed"] else "❌ fail",
+                                    "Checks passed": "%d / %d" % (sum(x["passed"] for x in c["checks"]), len(c["checks"])),
+                                    "Seconds": c["seconds"]} for c in report["cases"]]), hide_index=True, width="stretch")
+        for c in report["cases"]:
+            with st.expander("%s %d. %s" % ("✅" if c["passed"] else "❌", c["id"], c["title"])):
+                st.dataframe(pd.DataFrame([{"Check": x["check"], "Result": "✅" if x["passed"] else "❌", "What we saw": x["saw"]}
+                                           for x in c["checks"]]), hide_index=True, width="stretch")
+                for turn in c["chat"]:
+                    st.markdown("**Customer:** %s" % turn["customer"])
+                    st.markdown("**System:** %s" % turn["reply"].replace("\n", "  \n"))
+        with st.expander("Full report (JSON)"):
+            st.code(json.dumps(report, ensure_ascii=False, indent=1), language="json")
+    elif not key:
+        st.info("The AI key is not set here, so the live test cannot run.")
 
 # ======================================================================================
 else:
