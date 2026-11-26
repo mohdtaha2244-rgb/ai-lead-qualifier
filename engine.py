@@ -198,7 +198,7 @@ def handle_message(db, config, lead_id, text, ai, now=None):
         db.log(lead_id, now, "tier_changed", "%s -> %s (score %d/100)" % (lead["tier"], tier, score))
 
     reply = (answer.get("reply") or "").strip()
-    if answer.get("wants_human"):
+    if answer.get("wants_human") and tier != "NOT A LEAD":      # job seekers and spam never take an agent's time
         return hand_over(db, config, lead, now, lang, started, "The AI saw this needs a person", first=first_contact)
 
     # 8. act on the tier (only when it changes, so the lead never gets the same offer twice)

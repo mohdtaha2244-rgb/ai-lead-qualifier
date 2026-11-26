@@ -141,3 +141,11 @@ def test_ai_errors_are_explained_in_the_audit_log(db):
     handle_message(db, CONFIG, lead_id, "Hi", FakeAI(RuntimeError("no AI model answered. Tried: model-x: 404 NOT_FOUND")))
     errors = [e["detail"] for e in db.events(CONFIG["client_name"], lead_id) if e["kind"] == "ai_error"]
     assert "404" in errors[0]
+
+
+def test_job_seeker_never_goes_to_an_agent_even_if_the_ai_says_so(db):
+    lead_id = new_lead(db)
+    handle_message(db, CONFIG, lead_id, "Are you hiring? Here is my CV",
+                   FakeAI({"details": {"intent": "other"}, "wants_human": True}))       # bug found by the live AI test
+    lead = db.get_lead(lead_id)
+    assert lead["stage"] == "Not a lead" and lead["agent"] is None
