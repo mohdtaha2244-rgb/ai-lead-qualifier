@@ -1,0 +1,125 @@
+{
+  "client_name": "Demo Motors Dubai",
+  "industry": "Pre-owned car dealer (fictional demo client)",
+  "booking_word": "test drive",
+
+  "business_facts": "Demo Motors Dubai is a fictional pre-owned car dealer used for this demo. It sells checked used cars with a 1-year warranty and accepts trade-ins. Showroom: Al Quoz, open every day 10 AM to 9 PM. The assistant can share the cars below, collect the buyer's needs and book a test drive. Exact finance rates, insurance and trade-in values are answered by a sales consultant.",
+
+  "listings": [
+    {"id": "DM-201", "title": "Toyota Land Cruiser 2022, 48,000 km", "price_aed": 265000},
+    {"id": "DM-202", "title": "Nissan Patrol 2021, 61,000 km", "price_aed": 189000},
+    {"id": "DM-203", "title": "Lexus ES 350 2023, 22,000 km", "price_aed": 158000},
+    {"id": "DM-204", "title": "BMW X5 2021, 55,000 km", "price_aed": 199000},
+    {"id": "DM-205", "title": "Mercedes C200 2022, 30,000 km", "price_aed": 139000}
+  ],
+
+  "fields": [
+    {"key": "intent", "label": "Looking to", "ask": "Are you looking to buy a car, trade in your car, or both?",
+     "options": ["buy", "trade-in", "buy and trade-in", "other"],
+     "hint": "other = not a car buyer (job seeker, supplier, spam)"},
+    {"key": "car", "label": "Car wanted", "ask": "Which car or brand are you interested in?"},
+    {"key": "budget_aed", "label": "Budget (AED)", "ask": "What is your budget in AED?", "number": true,
+     "hint": "digits only, in AED. For a range, use the top of the range."},
+    {"key": "timeline", "label": "When", "ask": "When would you like to buy?",
+     "options": ["this week", "this month", "1-3 months", "just browsing"]},
+    {"key": "payment", "label": "Payment", "ask": "Will you pay in cash or with car finance? If finance, is it pre-approved?",
+     "options": ["cash", "finance pre-approved", "finance not yet", "not sure"]},
+    {"key": "name", "label": "Name", "ask": "May I have your name, please?"}
+  ],
+
+  "scoring": {
+    "required": ["intent", "budget_aed", "timeline"],
+    "not_a_lead": ["other"],
+    "hot": 70,
+    "warm": 40,
+    "rules": [
+      {"field": "budget_aed", "check": "min", "value": 80000, "points": 25, "reason": "Budget fits our cars (AED 80k or more)"},
+      {"field": "timeline", "check": "in", "value": ["this week", "this month"], "points": 30, "reason": "Wants to buy this month"},
+      {"field": "timeline", "check": "in", "value": ["1-3 months"], "points": 10, "reason": "Buying within 3 months"},
+      {"field": "payment", "check": "in", "value": ["cash", "finance pre-approved"], "points": 25, "reason": "Can pay now (cash or pre-approved finance)"},
+      {"field": "car", "check": "filled", "points": 10, "reason": "Knows which car"},
+      {"field": "name", "check": "filled", "points": 10, "reason": "Shared their name"}
+    ]
+  },
+
+  "routing": {
+    "by_field": "car",
+    "vip": {"field": "budget_aed", "min": 400000, "agent": "Elena (luxury desk)"},
+    "agents": [
+      {"name": "Yousef", "covers": ["Toyota", "Land Cruiser", "Nissan", "Patrol", "Lexus"]},
+      {"name": "Mark", "covers": ["BMW", "Mercedes", "Audi", "Porsche"]}
+    ],
+    "default_agent": "Hana"
+  },
+
+  "words": {
+    "opt_out": ["stop", "unsubscribe", "توقف", "إلغاء", "الغاء"],
+    "human": ["talk to an agent", "speak to an agent", "agent please", "a human", "human please", "real person", "speak to someone", "talk to someone", "call me", "موظف", "اتصل بي", "شخص حقيقي"]
+  },
+
+  "messages": {
+    "welcome": {
+      "en": "Hi! I'm the AI assistant of Demo Motors Dubai. I can answer questions about our cars and book a test drive for you. Reply STOP anytime to stop messages.",
+      "ar": "مرحباً! أنا المساعد الذكي لشركة ديمو موتورز دبي. أستطيع الإجابة عن أسئلتك حول سياراتنا وحجز تجربة قيادة لك. أرسل توقف في أي وقت لإيقاف الرسائل."
+    },
+    "HOT": {
+      "en": "Great news: {agent} can have the car ready. Pick a {booking_word} time by replying 1, 2 or 3:\n{slots}",
+      "ar": "خبر رائع: يمكن لـ {agent} تجهيز السيارة. اختر موعد تجربة القيادة بالرد بـ 1 أو 2 أو 3:\n{slots}"
+    },
+    "WARM": {
+      "en": "Thank you! {agent} will call you within one working day with cars that match.",
+      "ar": "شكراً لك! سيتصل بك {agent} خلال يوم عمل واحد بسيارات مناسبة."
+    },
+    "COLD": {
+      "en": "Thank you! I'll send you new cars that match. Message me anytime when you're ready.",
+      "ar": "شكراً لك! سأرسل لك سيارات جديدة مناسبة. راسلني في أي وقت عندما تكون جاهزاً."
+    },
+    "NOT A LEAD": {
+      "en": "Thank you for your message. This chat is for car enquiries; for anything else please email the showroom.",
+      "ar": "شكراً لرسالتك. هذه المحادثة مخصصة لاستفسارات السيارات؛ لأي أمر آخر يرجى مراسلة المعرض عبر البريد الإلكتروني."
+    },
+    "booked": {
+      "en": "Booked! Your {booking_word} with {agent} is on {slot}. You'll get a reminder the day before. Reply here if you need to change it.",
+      "ar": "تم الحجز! موعد تجربة القيادة مع {agent} يوم {slot}. سيصلك تذكير قبل يوم. راسلنا هنا إذا أردت تغيير الموعد."
+    },
+    "handover": {
+      "en": "Of course. I've passed your details to {agent}, who will reply to you here shortly.",
+      "ar": "بالتأكيد. لقد أرسلت بياناتك إلى {agent} وسيرد عليك هنا قريباً."
+    },
+    "opted_out": {
+      "en": "Done. You won't get any more messages from us. Thank you!",
+      "ar": "تم. لن تصلك أي رسائل أخرى منا. شكراً لك!"
+    },
+    "ai_down": {
+      "en": "Thank you for your message! A sales consultant will reply to you here shortly.",
+      "ar": "شكراً لرسالتك! سيرد عليك أحد مستشاري المبيعات هنا قريباً."
+    },
+    "reminder": {
+      "en": "Reminder: your {booking_word} with {agent} is tomorrow, {slot}. Reply 'change' if you need a new time.",
+      "ar": "تذكير: موعد تجربة القيادة مع {agent} غداً، {slot}. أرسل 'تغيير' إذا احتجت موعداً جديداً."
+    },
+    "agent_alert": "{tier} lead for you: {name}, {phone}. {summary}. Score {score}/100. Open the chat and call within 5 minutes."
+  },
+
+  "follow_up": {
+    "hours_after_last_reply": [1, 24, 72, 120, 216, 336],
+    "texts": {
+      "en": [
+        "Hi{name_part}, just checking: did you see my last message? I'm happy to help you find the right car.",
+        "Hi{name_part}, new cars arrived this week. Would you like me to send the ones that match you?",
+        "Hi{name_part}, test drives are available this weekend. Shall I book one for you?",
+        "Hi{name_part}, popular models sell fast. Would you like a quick call with a consultant?",
+        "Hi{name_part}, I can keep you updated once a week instead. Just reply YES.",
+        "Hi{name_part}, this is my last check-in. Message me anytime you're ready. Have a great day!"
+      ],
+      "ar": [
+        "مرحباً{name_part}، هل رأيت رسالتي السابقة؟ يسعدني مساعدتك في اختيار السيارة المناسبة.",
+        "مرحباً{name_part}، وصلتنا سيارات جديدة هذا الأسبوع. هل ترغب أن أرسل لك المناسب منها؟",
+        "مرحباً{name_part}، تتوفر مواعيد تجربة قيادة في نهاية هذا الأسبوع. هل أحجز لك موعداً؟",
+        "مرحباً{name_part}، الموديلات المطلوبة تُباع بسرعة. هل ترغب بمكالمة قصيرة مع مستشار؟",
+        "مرحباً{name_part}، يمكنني إرسال التحديثات مرة واحدة أسبوعياً. فقط أرسل نعم.",
+        "مرحباً{name_part}، هذه آخر رسالة متابعة. راسلني في أي وقت عندما تكون جاهزاً. يوماً سعيداً!"
+      ]
+    }
+  }
+}

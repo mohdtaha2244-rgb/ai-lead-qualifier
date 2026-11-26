@@ -1,0 +1,138 @@
+{
+  "client_name": "Demo Realty Dubai",
+  "industry": "Real estate brokerage (fictional demo client)",
+  "booking_word": "viewing",
+
+  "business_facts": "Demo Realty Dubai is a fictional property brokerage used for this demo. It helps people buy, rent and invest in apartments, villas and townhouses in Dubai Marina, JBR, Palm Jumeirah, Downtown Dubai, Business Bay, JVC, Dubai Hills and Arabian Ranches. Office hours: Monday to Saturday, 9 AM to 7 PM. Agents can do viewings 7 days a week. The assistant can share the listings below, collect the client's needs and book a viewing. Exact service charges, mortgage rates, legal and visa questions are answered by an agent.",
+
+  "listings": [
+    {"id": "DR-101", "title": "2-bed apartment, sea view", "area": "Dubai Marina", "type": "apartment", "bedrooms": 2, "for": "sale", "price_aed": 2450000},
+    {"id": "DR-102", "title": "1-bed apartment, furnished", "area": "JBR", "type": "apartment", "bedrooms": 1, "for": "rent", "price_aed": 130000},
+    {"id": "DR-103", "title": "3-bed apartment, Burj view", "area": "Downtown Dubai", "type": "apartment", "bedrooms": 3, "for": "sale", "price_aed": 4800000},
+    {"id": "DR-104", "title": "Studio, near metro", "area": "Business Bay", "type": "apartment", "bedrooms": 0, "for": "rent", "price_aed": 75000},
+    {"id": "DR-105", "title": "4-bed villa with garden", "area": "Dubai Hills", "type": "villa", "bedrooms": 4, "for": "sale", "price_aed": 9200000},
+    {"id": "DR-106", "title": "3-bed townhouse", "area": "JVC", "type": "townhouse", "bedrooms": 3, "for": "sale", "price_aed": 2300000},
+    {"id": "DR-107", "title": "5-bed signature villa", "area": "Palm Jumeirah", "type": "villa", "bedrooms": 5, "for": "sale", "price_aed": 32000000}
+  ],
+
+  "fields": [
+    {"key": "intent", "label": "Looking to", "ask": "Are you looking to buy, rent or invest?",
+     "options": ["buy", "rent", "invest", "other"],
+     "hint": "buy = to live in; invest = to buy for rental income or resale; other = not a property client (job seeker, supplier, spam)"},
+    {"key": "area", "label": "Area", "ask": "Which area of Dubai do you prefer?"},
+    {"key": "property_type", "label": "Property", "ask": "What kind of property, and how many bedrooms?",
+     "hint": "for example '2-bed apartment' or '4-bed villa'"},
+    {"key": "budget_aed", "label": "Budget (AED)", "ask": "What is your budget in AED?", "number": true,
+     "hint": "digits only, in AED. For rent: the yearly rent. For a range, use the top of the range."},
+    {"key": "timeline", "label": "When", "ask": "When are you planning to move in or buy?",
+     "options": ["now", "1-3 months", "3-6 months", "6+ months", "just browsing"]},
+    {"key": "payment", "label": "Payment", "ask": "Will you pay in cash or with a mortgage? If a mortgage, is it pre-approved?",
+     "options": ["cash", "mortgage pre-approved", "mortgage not yet", "not sure"],
+     "ask_when": {"intent": ["buy", "invest"]}},
+    {"key": "name", "label": "Name", "ask": "May I have your name, please?"}
+  ],
+
+  "scoring": {
+    "required": ["intent", "budget_aed", "timeline"],
+    "not_a_lead": ["other"],
+    "hot": 70,
+    "warm": 40,
+    "rules": [
+      {"field": "budget_aed", "check": "min", "value": 1000000, "points": 25, "when": {"intent": ["buy", "invest"]},
+       "reason": "Budget fits a purchase (AED 1M or more)"},
+      {"field": "budget_aed", "check": "min", "value": 70000, "points": 25, "when": {"intent": ["rent"]},
+       "reason": "Rent budget fits (AED 70k a year or more)"},
+      {"field": "timeline", "check": "in", "value": ["now", "1-3 months"], "points": 25,
+       "reason": "Ready to move within 3 months"},
+      {"field": "timeline", "check": "in", "value": ["3-6 months"], "points": 10,
+       "reason": "Planning within 6 months"},
+      {"field": "payment", "check": "in", "value": ["cash", "mortgage pre-approved"], "points": 20, "when": {"intent": ["buy", "invest"]},
+       "reason": "Can pay now (cash or pre-approved mortgage)"},
+      {"field": "area", "check": "filled", "points": 10, "reason": "Knows which area"},
+      {"field": "property_type", "check": "filled", "points": 10, "reason": "Knows what property"},
+      {"field": "name", "check": "filled", "points": 10, "reason": "Shared their name"}
+    ]
+  },
+
+  "routing": {
+    "by_field": "area",
+    "vip": {"field": "budget_aed", "min": 10000000, "agent": "Fatima (senior agent)"},
+    "agents": [
+      {"name": "Sara", "covers": ["Dubai Marina", "JBR", "Palm Jumeirah"]},
+      {"name": "Rashid", "covers": ["Downtown Dubai", "Downtown", "Business Bay", "DIFC"]},
+      {"name": "Priya", "covers": ["JVC", "Jumeirah Village Circle", "Dubai Hills", "Arabian Ranches"]}
+    ],
+    "default_agent": "Daniel"
+  },
+
+  "words": {
+    "opt_out": ["stop", "unsubscribe", "توقف", "إلغاء", "الغاء"],
+    "human": ["talk to an agent", "speak to an agent", "agent please", "a human", "human please", "real person", "speak to someone", "talk to someone", "call me", "موظف", "اتصل بي", "شخص حقيقي"]
+  },
+
+  "messages": {
+    "welcome": {
+      "en": "Hi! I'm the AI assistant of Demo Realty Dubai. I can answer questions about our listings and book a viewing for you. Reply STOP anytime to stop messages.",
+      "ar": "مرحباً! أنا المساعد الذكي لشركة ديمو ريالتي دبي. أستطيع الإجابة عن أسئلتك حول العقارات وحجز موعد معاينة لك. أرسل توقف في أي وقت لإيقاف الرسائل."
+    },
+    "HOT": {
+      "en": "Great news: {agent} can show you options. Pick a {booking_word} time by replying 1, 2 or 3:\n{slots}",
+      "ar": "خبر رائع: يمكن لـ {agent} أن يعرض عليك الخيارات. اختر موعد المعاينة بالرد بـ 1 أو 2 أو 3:\n{slots}"
+    },
+    "WARM": {
+      "en": "Thank you! {agent} will call you within one working day with options that match.",
+      "ar": "شكراً لك! سيتصل بك {agent} خلال يوم عمل واحد بخيارات مناسبة."
+    },
+    "COLD": {
+      "en": "Thank you! I'll send you new listings that match. Message me anytime when you're ready.",
+      "ar": "شكراً لك! سأرسل لك عروضاً جديدة مناسبة. راسلني في أي وقت عندما تكون جاهزاً."
+    },
+    "NOT A LEAD": {
+      "en": "Thank you for your message. This chat is for property enquiries; for anything else please email the office.",
+      "ar": "شكراً لرسالتك. هذه المحادثة مخصصة للاستفسارات العقارية؛ لأي أمر آخر يرجى مراسلة المكتب عبر البريد الإلكتروني."
+    },
+    "booked": {
+      "en": "Booked! Your {booking_word} with {agent} is on {slot}. You'll get a reminder the day before. Reply here if you need to change it.",
+      "ar": "تم الحجز! موعد المعاينة مع {agent} يوم {slot}. سيصلك تذكير قبل يوم. راسلنا هنا إذا أردت تغيير الموعد."
+    },
+    "handover": {
+      "en": "Of course. I've passed your details to {agent}, who will reply to you here shortly.",
+      "ar": "بالتأكيد. لقد أرسلت بياناتك إلى {agent} وسيرد عليك هنا قريباً."
+    },
+    "opted_out": {
+      "en": "Done. You won't get any more messages from us. Thank you!",
+      "ar": "تم. لن تصلك أي رسائل أخرى منا. شكراً لك!"
+    },
+    "ai_down": {
+      "en": "Thank you for your message! An agent will reply to you here shortly.",
+      "ar": "شكراً لرسالتك! سيرد عليك أحد الوكلاء هنا قريباً."
+    },
+    "reminder": {
+      "en": "Reminder: your {booking_word} with {agent} is tomorrow, {slot}. Reply 'change' if you need a new time.",
+      "ar": "تذكير: موعد المعاينة مع {agent} غداً، {slot}. أرسل 'تغيير' إذا احتجت موعداً جديداً."
+    },
+    "agent_alert": "{tier} lead for you: {name}, {phone}. {summary}. Score {score}/100. Open the chat and call within 5 minutes."
+  },
+
+  "follow_up": {
+    "hours_after_last_reply": [1, 24, 72, 120, 216, 336],
+    "texts": {
+      "en": [
+        "Hi{name_part}, just checking: did you see my last message? I'm happy to help with your property search.",
+        "Hi{name_part}, new listings came in this week. Would you like me to send the ones that match you?",
+        "Hi{name_part}, viewings are available this weekend. Shall I book one for you?",
+        "Hi{name_part}, prices in popular areas move fast. Would you like a quick call with an agent?",
+        "Hi{name_part}, I can keep you updated once a week instead. Just reply YES.",
+        "Hi{name_part}, this is my last check-in. Message me anytime you're ready. Have a great day!"
+      ],
+      "ar": [
+        "مرحباً{name_part}، هل رأيت رسالتي السابقة؟ يسعدني مساعدتك في البحث عن عقار.",
+        "مرحباً{name_part}، وصلتنا عروض جديدة هذا الأسبوع. هل ترغب أن أرسل لك المناسب منها؟",
+        "مرحباً{name_part}، تتوفر مواعيد معاينة في نهاية هذا الأسبوع. هل أحجز لك موعداً؟",
+        "مرحباً{name_part}، الأسعار في المناطق المطلوبة تتغير بسرعة. هل ترغب بمكالمة قصيرة مع وكيل؟",
+        "مرحباً{name_part}، يمكنني إرسال التحديثات مرة واحدة أسبوعياً. فقط أرسل نعم.",
+        "مرحباً{name_part}، هذه آخر رسالة متابعة. راسلني في أي وقت عندما تكون جاهزاً. يوماً سعيداً!"
+      ]
+    }
+  }
+}
