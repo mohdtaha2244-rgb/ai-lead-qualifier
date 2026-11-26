@@ -61,7 +61,7 @@ They cover money parsing ("2.5M", "٢ مليون"), scoring for buyers, renters 
 
 Unit tests check our code. This checks the AI itself: 15 real customer chats go through the real system and the real AI (Gemini), and plain code checks each result: the details found, the tier, the agent, the reply language, no made-up prices, no leaked rules, and no question asked twice.
 
-The chats: a cash buyer who says everything at once, a Gulf Arabic renter, 6 short answers in a row, a price question, a question the facts can't answer, a prompt-injection attack, a discount request, a visa question, an angry customer, a job seeker, a low-budget browser, an off-topic question, a AED 35M buyer, a customer who changes their budget, and a car buyer.
+The chats: a cash buyer who says everything at once, a Gulf Arabic renter, 6 short answers in a row, a price question, a question the facts can't answer, a prompt-injection attack, a discount request, a visa question, an angry customer, a job seeker, a low-budget browser, an off-topic question, an AED 35M buyer, a customer who changes their budget, and a car buyer.
 
 **Saved full run: 15 / 15 passed** (26 Nov 2026, `evals/saved_report.json`, also shown in the app). On the free AI plan, some later runs had 1 or 2 failures when Google returned "high demand" (503) or timeout (504) errors, and one run near the end hit the free daily quota after many runs. In every one of those cases the customer still got a polite reply and the chat went to a person.
 
