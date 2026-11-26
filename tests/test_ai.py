@@ -64,3 +64,10 @@ def test_backup_lite_model_is_always_tried(monkeypatch):
     ask, fake = make(monkeypatch, outcomes, ["f1", "f2", "f3", "f4", "f5", "f6-lite"])
     assert ask(CONFIG, HISTORY, {}, [])[1] == "f6-lite"
     assert fake.tried == ["f1", "f2", "f6-lite"]
+
+
+def test_slow_model_is_not_retried_the_next_one_answers(monkeypatch):
+    slow = RuntimeError("504 DEADLINE_EXCEEDED")
+    ask, fake = make(monkeypatch, {"a-lite": slow, "b-lite": GOOD}, ["a-lite", "b-lite"])
+    assert ask(CONFIG, HISTORY, {}, [])[1] == "b-lite"
+    assert fake.tried == ["a-lite", "b-lite"]                    # found by the live AI test: no waiting twice

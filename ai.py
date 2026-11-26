@@ -108,7 +108,7 @@ def build_contents(history, details, missing, labels):
 def make_ai(key, model=None):
     """Returns a function the engine can call. Keeping the AI behind one function means
     the tests can use a fake AI, and we could switch to another AI provider by changing only this file."""
-    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=15000))
+    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=10000))
 
     def ask(config, history, details, missing):
         shape = answer_model(config)
@@ -149,9 +149,9 @@ def make_ai(key, model=None):
                         break                   # quota used up on this model: rest it, try the next one
                     if attempt == 0 and ("400" in text or "INVALID_ARGUMENT" in text or "thinking" in text.lower()):
                         continue                # model does not accept the speed setting: retry without it
-                    if attempt == 0 and any(s in text for s in ("503", "UNAVAILABLE", "504", "DEADLINE", "imed out")):
-                        time.sleep(1)
-                        continue                # busy: one quick retry
+                    if any(s in text for s in ("503", "UNAVAILABLE", "504", "DEADLINE", "imed out")):
+                        RESTING[name] = time.time() + 30
+                        break                   # slow or busy: rest it and go straight to the next model
                     break
         raise RuntimeError("no AI model answered. Tried: " + " | ".join(errors))
 
