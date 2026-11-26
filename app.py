@@ -44,9 +44,8 @@ def get_secret(name):
         return os.environ.get(name)
 
 
-@st.cache_resource
 def get_ai(key, model):
-    return make_ai(key, model)
+    return make_ai(key, model)          # cheap to create; not cached, so a code update is used at once
 
 
 def no_ai(*args):
