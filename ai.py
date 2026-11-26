@@ -123,8 +123,11 @@ def make_ai(key, model=None):
         else:                                    # best 2 main models, then 3 'lite' backups: a backup is always tried
             ready = [m for m in pick_models(key) if m not in SWITCHED_OFF and RESTING.get(m, 0) < time.time()]
             models = [m for m in ready if "lite" not in m][:2] + [m for m in ready if "lite" in m][:3]
+            if not models:                       # all resting: still try the one that is ready soonest
+                waiting = [m for m in pick_models(key) if m not in SWITCHED_OFF]
+                models = sorted(waiting, key=lambda m: RESTING.get(m, 0))[:1]
         if not models:
-            raise RuntimeError("quota: the free AI quota is used up for now")
+            raise RuntimeError("no AI model is available for this key")
         deadline = time.time() + DEADLINE_SECONDS
         errors = []
         for name in models:

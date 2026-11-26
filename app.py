@@ -322,13 +322,13 @@ elif view == VIEWS[3]:
 # ======================================================================================
 elif view == VIEWS[4]:
     st.subheader("AI quality test: real customer chats, checked by code")
-    st.write("The 67 unit tests check our own code with a fake AI. This test sends 15 real customer chats to the "
+    st.write("The 71 unit tests check our own code with a fake AI. This test sends 15 real customer chats to the "
              "**real AI** through the real system: English, Gulf Arabic, short answers, price questions, a hacker trick, "
              "an angry customer, a job seeker, a VIP buyer, and the car dealer. Plain code checks every result.")
     report = st.session_state.get("eval_report")
-    if report is None and os.path.exists("evals/report.json"):
-        report = json.load(open("evals/report.json", encoding="utf-8"))
-    if key and st.button("▶ Run the 15 tests now on the live AI (about 2 minutes)"):
+    if report is None and os.path.exists("evals/saved_report.json"):
+        report = json.load(open("evals/saved_report.json", encoding="utf-8"))
+    if key and st.button("▶ Run the 15 tests again now on the live AI (about 2 minutes, about 30 AI requests)"):
         import importlib
         import evals.run
         run_all = importlib.reload(evals.run).run_all      # always test the newest engine code
@@ -337,13 +337,12 @@ elif view == VIEWS[4]:
                    "car_dealer": load_config(CLIENTS["Demo Motors Dubai (cars)"])}
         report = run_all(configs, ai, progress=lambda n, total, title: bar.progress(n / total, text="Test %d of %d: %s" % (n + 1, total, title)))
         bar.empty()
-        st.session_state.eval_report = report
-        with open("evals/report.json", "w", encoding="utf-8") as f:
-            json.dump(report, f, ensure_ascii=False, indent=1)
+        st.session_state.eval_report = report          # shown on this screen only; the saved full run stays as it is
     if report:
         models = sorted({c["model"] for c in report["cases"] if c["model"]})
         st.metric("Passed", "%d / %d" % (report["passed"], report["total"]))
-        st.caption("Run on %s · AI model: %s" % (report["run_at"], ", ".join(models) or "?"))
+        st.caption("%s run on %s · AI model: %s" % ("Your" if "eval_report" in st.session_state else "Saved full",
+                                                    report["run_at"], ", ".join(models) or "?"))
         st.dataframe(pd.DataFrame([{"#": c["id"], "Test": c["title"], "Result": "✅ pass" if c["passed"] else "❌ fail",
                                     "Checks passed": "%d / %d" % (sum(x["passed"] for x in c["checks"]), len(c["checks"])),
                                     "Seconds": c["seconds"]} for c in report["cases"]]), hide_index=True, width="stretch")

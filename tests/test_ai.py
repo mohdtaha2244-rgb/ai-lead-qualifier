@@ -71,3 +71,10 @@ def test_slow_model_is_not_retried_the_next_one_answers(monkeypatch):
     ask, fake = make(monkeypatch, {"a-lite": slow, "b-lite": GOOD}, ["a-lite", "b-lite"])
     assert ask(CONFIG, HISTORY, {}, [])[1] == "b-lite"
     assert fake.tried == ["a-lite", "b-lite"]                    # found by the live AI test: no waiting twice
+
+
+def test_when_all_models_rest_the_soonest_ready_is_still_tried(monkeypatch):
+    import time
+    ask, fake = make(monkeypatch, {"a-lite": GOOD, "b-lite": GOOD}, ["a-lite", "b-lite"])
+    ai.RESTING.update({"a-lite": time.time() + 50, "b-lite": time.time() + 10})
+    assert ask(CONFIG, HISTORY, {}, [])[1] == "b-lite"

@@ -2,6 +2,8 @@
 
 A lead writes on WhatsApp or fills a property-portal form. Within seconds the system replies, answers their question from the client's own listings, and collects what the sales team needs: what they want, where, budget, when, and how they will pay. Then fixed rules score the lead, the right agent gets an alert, the lead picks a viewing time, and follow-ups go out by themselves.
 
+**Live demo:** https://ai-lead-qualifier-8mhljqsunkpknd5wozd5jp.streamlit.app/
+
 Built by Mohammed Taha with Claude Code. The businesses (Demo Realty Dubai, Demo Motors Dubai) and the sample leads are fictional.
 
 ## The client problem it solves
@@ -45,19 +47,32 @@ A Dubai brokerage gets leads from portals, Instagram and WhatsApp at all hours. 
 | `checks.py` | Language, UAE phone numbers, STOP, "talk to a person", slot choice |
 | `db.py` | SQLite database: leads, messages, audit log |
 | `clients/*.json` | One rules file per client business |
-| `app.py` | The demo screens: chat, pipeline, manager report, rules |
-| `tests/` | 63 unit tests |
+| `app.py` | The demo screens: chat, pipeline, manager report, ROI calculator, AI quality test, rules |
+| `tests/` | 71 unit tests (no AI, no internet) |
+| `evals/` | AI quality test: 15 real chats run against the live AI |
 
 ## Tests
 
-`python -m pytest` runs 63 unit tests in under a second. No AI and no internet needed: the engine tests use a fake AI, so they check the system's own decisions every time, for free.
+`python -m pytest` runs 71 unit tests in about a second. No AI and no internet needed: the engine tests use a fake AI, so they check the system's own decisions every time, for free.
 
-They cover money parsing ("2.5M", "٢ مليون"), scoring for buyers, renters and car buyers, routing by area and VIP budget, UAE phone numbers, STOP, handover, the 6-follow-up limit, viewing reminders, an AI failure, duplicate leads, and two leads trying to book the same time.
+They cover money parsing ("2.5M", "٢ مليون"), scoring for buyers, renters and car buyers, routing by area and VIP budget, UAE phone numbers, STOP, handover, the 6-follow-up limit, viewing reminders, an AI failure, duplicate leads, two leads trying to book the same time, and the AI fallback rules (a switched-off model, a model out of quota, a slow model).
 
-**Two real bugs the tests caught:**
+### AI quality test (live)
+
+Unit tests check our code. This checks the AI itself: 15 real customer chats go through the real system and the real AI (Gemini), and plain code checks each result: the details found, the tier, the agent, the reply language, no made-up prices, no leaked rules, and no question asked twice.
+
+The chats: a cash buyer who says everything at once, a Gulf Arabic renter, 6 short answers in a row, a price question, a question the facts can't answer, a prompt-injection attack, a discount request, a visa question, an angry customer, a job seeker, a low-budget browser, an off-topic question, a AED 35M buyer, a customer who changes their budget, and a car buyer.
+
+**Saved full run: 15 / 15 passed** (26 Nov 2026, `evals/saved_report.json`, also shown in the app). On the free AI plan, some later runs had 1 or 2 failures when Google returned "high demand" (503) or timeout (504) errors, and one run near the end hit the free daily quota after many runs. In every one of those cases the customer still got a polite reply and the chat went to a person.
+
+**Real bugs the tests caught (all fixed, each with a new test):**
 
 1. **A perfect buyer scored 91, not 100.** Two "when are you moving" rules (within 3 months, within 6 months) were both counted as possible points, but only one can ever be true. Fix: rules about the same detail count once.
 2. **A job seeker was handed to an agent.** "Are you hiring real estate agents?" contains the word "agent", which was on the "wants a person" list. Fix: full phrases such as "talk to an agent", plus a test for this exact message.
+3. **Google switched off an old AI model** (404 "no longer available to new users"). The system kept trying it first. Found by the first live run. Fix: a switched-off model is skipped forever, and every model's error is saved in the audit log.
+4. **The backup models were never reached.** When the newest models were out of quota, the list of models to try was full of other main models, so the "lite" backups were not tried. Fix: always 2 main models plus 3 backups.
+5. **A slow model used the whole time limit.** After a timeout, the same model was tried again. Fix: a slow model rests and the next one answers. If no answer comes within 25 seconds, a person takes over.
+6. **A job seeker went to an agent** because the AI flagged "needs a person". Fix: when the rules say "not a lead", it never takes an agent's time, whatever the AI says.
 
 ## What a real client launch would add
 
